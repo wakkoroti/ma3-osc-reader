@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>OSC MA3 Cue Monitor</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            background: #111;
+            color: white;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container { 
+            border-radius: 5px;
+  	        border: 1px solid white;
+            font: normal 20px/1 "Inspire", "helvetica neue", helvetica, arial, sans-serif;
+            text-align: center;
+            text-shadow: 1px 1px rgba(0, 0, 0, 0);
+            margin: 0px auto 0;
+            padding: 5px;
+            font-size: 100%;
+			background-repeat:no-repeat;
+            width: 650px;
+            height: 150px;
+            vertical-align: middle;
+		}
+        .label {
+            font-size: 28px;
+            color: #888;
+            text-align: right;
+            vertical-align: middle;
+        }
+        .sequence {
+            font-size: 28px;
+            color: #888;
+            vertical-align: middle;
+        }
+        .cue {
+            font-size: 100px;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <table class="container">
+        <colgroup>
+            <col style="width:50%">
+            <col style="width:40%">
+        </colgroup>
+        <tr>
+            <td class="label">LIGHTING SEQUENCE&nbsp&nbsp&nbsp</td>
+            <td class="sequence" id="sequence"></td>
+        </tr>
+        <tr style="height:110px;">
+            <td class="label">CUE&nbsp&nbsp&nbsp </td>
+            <td class="cue" id="cue"></td>
+        </tr>
+    </table>
+
+
+    <script>
+
+        // Connect to the Python server
+        // using Server-Sent Events.
+
+        const events =
+            new EventSource("/events");
+
+
+        events.onmessage = function(event) {
+
+            const data =
+                JSON.parse(event.data);
+
+
+            document.getElementById(
+                "sequence"
+            ).textContent = data.sequence;
+
+
+            document.getElementById(
+                "cue"
+            ).textContent = data.cue;
+
+        };
+
+
+        // The browser will automatically attempt
+        // to reconnect if the Python server
+        // temporarily disappears.
+
+        events.onerror = function() {
+
+            // Nothing needed here.
+            // EventSource automatically reconnects.
+
+        };
+
+    </script>
+
+</body>
+
+</html>
