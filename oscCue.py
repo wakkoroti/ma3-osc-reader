@@ -31,6 +31,7 @@ SEQUENCE_NAMES = [
 
 current_sequence = ""
 current_cue = ""
+current_cue_name = ""
 
 # Protects the current state when accessed by
 # the UDP listener and web server threads.
@@ -45,6 +46,7 @@ def udp_listener():
 
     global current_sequence
     global current_cue
+    global current_cue_name
 
     sock = socket.socket(
         socket.AF_INET,
@@ -145,7 +147,7 @@ def udp_listener():
 
                 pattern = (
                     re.escape(sequence_name)
-                    + r"\s+([0-9]+(?:\.[0-9]+)?)\s+Cue\b"
+                    + r"\s+([0-9]{1,4}(?:\.[0-9]{1,4})?)\s+([^\x00]+)"
                 )
 
 
@@ -159,6 +161,7 @@ def udp_listener():
                 if match:
 
                     cue_number = match.group(1)
+                    cue_name = match.group(2)
 
 
                     # Update the information displayed
@@ -168,13 +171,15 @@ def udp_listener():
 
                         current_sequence = sequence_name
                         current_cue = cue_number
+                        current_cue_name = cue_name
 
 
                     # Console output is useful while testing.
 
                     print(
                         f"Seq: {current_sequence} "
-                        f"Cue: {current_cue}"
+                        f"Cue: {current_cue} "
+                        f"Name: {current_cue_name}"
                     )
 
 
@@ -282,6 +287,11 @@ HTML_PAGE = """
             <td class="label">CUE&nbsp&nbsp&nbsp </td>
             <td class="cue" id="cue"></td>
         </tr>
+        <tr>
+            <td class="label">CUE NAME&nbsp&nbsp&nbsp</td>
+            <td class="sequence" id="cuename"></td>
+        </tr>
+        
     </table>
 
 
@@ -308,6 +318,11 @@ HTML_PAGE = """
             document.getElementById(
                 "cue"
             ).textContent = data.cue;
+
+            
+            document.getElementById(
+                "cuename"
+            ).textContent = data.cuename;
 
         };
 
@@ -458,13 +473,15 @@ class WebHandler(
 
                     sequence = current_sequence
                     cue = current_cue
+                    cuename = current_cue_name
 
 
                 # Send current state immediately
 
                 self.send_current_state(
                     sequence,
-                    cue
+                    cue,
+                    cuename
                 )
 
 
@@ -472,6 +489,7 @@ class WebHandler(
 
                 last_sequence = sequence
                 last_cue = cue
+                last_cuename = cuename
 
 
                 # Wait for changes
@@ -484,6 +502,7 @@ class WebHandler(
 
                         sequence = current_sequence
                         cue = current_cue
+                        cuename = current_cue_name
 
 
                     # Only send when something changes
@@ -491,15 +510,18 @@ class WebHandler(
                     if (
                         sequence != last_sequence
                         or cue != last_cue
+                        or cuename != last_cuename
                     ):
 
                         self.send_current_state(
                             sequence,
-                            cue
+                            cue,
+                            cuename
                         )
 
                         last_sequence = sequence
                         last_cue = cue
+                        last_cuename = cuename
 
                 return
 
@@ -535,12 +557,14 @@ class WebHandler(
     def send_current_state(
         self,
         sequence,
-        cue
+        cue,
+        cuename
     ):
 
         data = json.dumps({
             "sequence": sequence,
-            "cue": cue
+            "cue": cue,
+            "cuename": cuename
         })
 
         message = (
