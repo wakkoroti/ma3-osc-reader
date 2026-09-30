@@ -24,11 +24,6 @@ SEQUENCE_NAMES = [
     "Another One",
 ]
 
-
-# ============================================================
-# CURRENT STATE
-# ============================================================
-
 current_sequence = ""
 current_cue = ""
 current_cue_name = ""
@@ -36,11 +31,6 @@ current_cue_name = ""
 # Protects the current state when accessed by
 # the UDP listener and web server threads.
 state_lock = threading.Lock()
-
-
-# ============================================================
-# UDP LISTENER
-# ============================================================
 
 def udp_listener():
 
@@ -83,29 +73,19 @@ def udp_listener():
             except socket.timeout:
                 continue
 
-
-            # ------------------------------------------------
-            # Check each configured sequence name
-            # ------------------------------------------------
-
             for sequence_name in SEQUENCE_NAMES:
 
                 sequence_bytes = sequence_name.encode(
                     "utf-8"
                 )
 
-
-                # Find the sequence name in the
-                # raw OSC packet.
-
+                # Find the sequence name
                 position = data.find(
                     sequence_bytes
                 )
 
-
                 if position == -1:
                     continue
-
 
                 # There must be a byte immediately
                 # before the sequence name.
@@ -113,16 +93,11 @@ def udp_listener():
                 if position == 0:
                     continue
 
-
-                # The byte immediately before the
-                # sequence name MUST be 0x01.
-                #
-                # \x01TheShow 2 Cue  -> ACCEPT
+                # \x01TheShow 2 Cue  -> ACCEPT - GrandMA3 this is equal to depress the button
                 # \x00TheShow 2 Cue  -> IGNORE
 
                 if data[position - 1] != 0x01:
                     continue
-
 
                 # ------------------------------------------------
                 # Decode from the sequence name onward
@@ -205,7 +180,7 @@ def udp_listener():
 
 
 # ============================================================
-# WEB PAGE
+# WEB PAGE DISPLAY
 # ============================================================
 
 HTML_PAGE = """
