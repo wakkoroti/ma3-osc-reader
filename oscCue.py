@@ -3,6 +3,7 @@ import re
 import threading
 import time
 import json
+import errno
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
@@ -16,7 +17,7 @@ from socketserver import ThreadingMixIn
 LISTEN_PORT = 8000
 
 # Web interface port
-WEB_PORT = 8080
+WEB_PORT = 8081
 
 # Sequence names to look for
 SEQUENCE_NAMES = [
@@ -571,42 +572,49 @@ class WebHandler(
 
 def start_web_server():
 
-    server = ThreadedHTTPServer(
-        ("0.0.0.0", WEB_PORT),
-        WebHandler
-    )
+    try:
+        server = ThreadedHTTPServer(
+            ("0.0.0.0", WEB_PORT),
+            WebHandler
+        )
 
+    except OSError as e:
 
-    print(
-        "Web interface available at:"
-    )
+        if e.errno in (errno.EADDRINUSE, errno.EACCES) or getattr(e, "winerror", None) in (10013, 10048):
 
-    print(
-        f"  http://localhost:{WEB_PORT}"
-    )
+            print()
+            print("=" * 60)
+            print("ERROR: Unable to start the web server")
+            print("=" * 60)
+            print()
+            print(f"Port {WEB_PORT} is unavailable.")
+            print(
+                "Another program may be using the port, "
+                "or Windows may have reserved it."
+            )
+            print()
+            print(
+                f"Try changing WEB_PORT = {WEB_PORT} "
+                "to another port in the configuration."
+            )
+            print()
+            return
 
+        # Unexpected socket errors should still be reported.
+        raise
+
+    print("Web interface available at:")
+    print(f"  http://localhost:{WEB_PORT}")
 
     try:
+        server.serve_forever(poll_interval=0.5)
 
-        server.serve_forever(
-            poll_interval=0.5
-        )
-
+    except KeyboardInterrupt:
+        print("\nStopping web server...")
 
     finally:
-
-        print(
-            "Stopping web server..."
-        )
-
-        server.shutdown()
-
         server.server_close()
-
-        print(
-            "Web server stopped."
-        )
-
+        print("Web server stopped.")
 
 # ============================================================
 # MAIN
