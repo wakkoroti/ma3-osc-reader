@@ -1,3 +1,4 @@
+import argparse
 import socket
 import re
 import threading
@@ -8,22 +9,7 @@ import errno
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 
-
-# ============================================================
-# CONFIGURATION
-# ============================================================
-
-# UDP port to listen on
-LISTEN_PORT = 8000
-
-# Web interface port
-WEB_PORT = 8081
-
-# Sequence names to look for
-SEQUENCE_NAMES = [
-    "TheShow",
-    "Another One",
-]
+from config import LISTEN_PORT, WEB_PORT, SEQUENCE_NAMES
 
 current_sequence = ""
 current_cue = ""
@@ -32,6 +18,43 @@ current_cue_name = ""
 # Protects the current state when accessed by
 # the UDP listener and web server threads.
 state_lock = threading.Lock()
+
+# ============================================================
+# COMMAND-LINE ARGUMENTS
+# ============================================================
+
+def parse_args():
+
+    parser = argparse.ArgumentParser(
+        description="grandMA3 OSC Sequence Monitor"
+    )
+
+    parser.add_argument(
+        "--listen-port",
+        type=int,
+        default=None,
+        help="UDP listening port (default: config.py)"
+    )
+
+    parser.add_argument(
+        "--web-port",
+        type=int,
+        default=None,
+        help="Web interface port (default: config.py)"
+    )
+
+    parser.add_argument(
+        "--sequence",
+        action="append",
+        default=None,
+        help=(
+            "Sequence name to monitor. "
+            "Can be specified multiple times. "
+            "Overrides the sequence list in config.py."
+        )
+    )
+
+    return parser.parse_args()
 
 def udp_listener():
 
@@ -620,82 +643,53 @@ def start_web_server():
 # MAIN
 # ============================================================
 
+# ============================================================
+# MAIN
+# ============================================================
+
 if __name__ == "__main__":
 
-    print(
-        "=" * 60
-    )
+    # Read command-line arguments.
+    args = parse_args()
 
-    print(
-        "OSC Sequence Monitor"
-    )
+    # Apply overrides only when specified.
+    if args.listen_port is not None:
+        LISTEN_PORT = args.listen_port
 
-    print(
-        "=" * 60
-    )
+    if args.web_port is not None:
+        WEB_PORT = args.web_port
 
+    if args.sequence is not None:
+        SEQUENCE_NAMES = args.sequence
 
-    print(
-        f"UDP Port : {LISTEN_PORT}"
-    )
+    print("=" * 60)
+    print("OSC Sequence Monitor")
+    print("=" * 60)
 
-    print(
-        f"Web Port : {WEB_PORT}"
-    )
+    print(f"UDP Port : {LISTEN_PORT}")
+    print(f"Web Port : {WEB_PORT}")
 
-
-    print(
-        "\nSequences being monitored:"
-    )
-
+    print("\nSequences being monitored:")
 
     for name in SEQUENCE_NAMES:
+        print(f"  {name}")
 
-        print(
-            f"  {name}"
-        )
-
-
-    print(
-        "\nPress Ctrl+C to stop."
-    )
-
-
-    print(
-        "=" * 60
-    )
-
+    print("\nPress Ctrl+C to stop.")
+    print("=" * 60)
     print()
 
-
-    # --------------------------------------------------------
-    # Start UDP listener in background
-    # --------------------------------------------------------
-
+    # Start UDP listener in background.
     udp_thread = threading.Thread(
         target=udp_listener,
         daemon=True
     )
-
     udp_thread.start()
 
-
-    # --------------------------------------------------------
-    # Run web server
-    # --------------------------------------------------------
-
+    # Run web server.
     try:
-
         start_web_server()
 
-
     except KeyboardInterrupt:
+        print("\nStopping...")
 
-        print(
-            "\nStopping..."
-        )
-
-
-    print(
-        "Program stopped."
-    )
+    print("Program stopped.")
