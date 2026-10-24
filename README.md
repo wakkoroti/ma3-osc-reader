@@ -2,6 +2,8 @@
 
 A Python application that listens for OSC-related UDP messages from a grandMA3 lighting console and displays the active sequence, cue number, and cue name in a web browser.
 
+![Screenshot of MA3 OSC Reader showing a current cue display](https://github.com/wakkoroti/ma3-osc-reader/blob/main/image01.png?raw=true)
+
 ## Features
 
 - Listens for UDP messages from grandMA3.
